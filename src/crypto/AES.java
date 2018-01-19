@@ -24,7 +24,8 @@ public class AES {
     private short[][][] state;
 
     public static void main(String args[]){
-        new AES(new byte[]{1,2,3,2,123,1,1,23},"Hello there this is a poem, maybe it isn't who really knows?");
+       AES sys = new AES(new byte[]{1,2,3,2,123,1,1,23},"Hello there this is a poem, maybe it isn't who really knows?");
+        sys.digest();
     }
 
     public AES(byte[] key, String message){
@@ -34,13 +35,32 @@ public class AES {
         for (int i = 0; i < blocks; i++){
             for(int j = 0 ; j < 4; j ++){
                 for (int k = 0; k < 4; k ++){
-                    state[i][j][k] = (index < message.length()) ? (short) message.charAt(index) : 0;
+                    state[i][j][k] = (index < message.length()) ? (short) message.charAt(index) : 255;
                     index++;
                 }
             }
         }
-        System.out.println(Arrays.deepToString(state));
+
 
     }
+
+    public void round(){
+        for(short[][] block : state)
+            for (short[] row : block)
+                for(int i = 0 ; i < 4; i ++){
+                    row[i] = sBox[row[i]-1];
+                }
+
+
+    }
+
+    public void digest(){
+        for (int i = 0; i < 10; i ++){
+            System.out.println(Arrays.deepToString(state));
+
+            round();
+        }
+    }
+
 
 }
