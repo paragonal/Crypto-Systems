@@ -1,4 +1,6 @@
-package input;
+package crypto;
+
+import java.util.Arrays;
 
 public class AES {
     public static final short[] sBox = new  short[]{
@@ -22,14 +24,22 @@ public class AES {
     private short[][][] state;
 
     public static void main(String args[]){
-
+        new AES(new byte[]{1,2,3,2,123,1,1,23},"Hello there this is a poem, maybe it isn't who really knows?");
     }
 
     public AES(byte[] key, String message){
         int blocks = message.length() / 16 + 1;
         state = new short[blocks][4][4];
-
-
+        int index = 0;
+        for (int i = 0; i < blocks; i++){
+            for(int j = 0 ; j < 4; j ++){
+                for (int k = 0; k < 4; k ++){
+                    state[i][j][k] = (index < message.length()) ? (short) message.charAt(index) : 0;
+                    index++;
+                }
+            }
+        }
+        System.out.println(Arrays.deepToString(state));
 
     }
 
