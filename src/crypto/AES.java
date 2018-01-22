@@ -92,6 +92,23 @@ public class AES {
 
     }
 
+	public void mixColumns(){
+		for (int[][] arr : state) {
+			short[][] temp = new short[4][4];
+			for (int i = 0; i < 4; i++) {
+				System.arraycopy(arr[i], 0, temp[i], 0, 4);
+			}
+			for (int i = 0; i < 4; i++){
+				for (int j = 0; j < 4; j++){
+					
+				}
+			}
+		}
+	}
+	private void colHelper(){
+
+	}
+    
     public String digest() {
         for (int i = 0; i < 10; i++) {
             round();
