@@ -58,20 +58,16 @@ public class AES {
                     state[i][j][k] = (index < message.length()) ? (int) message.charAt(index) : 255;
                     index++;
                 }
-
-
-
-
     }
-
-    public void round() {
+    private void substitute(){
         //substitution
         for (int[][] block : state)
             for (int[] row : block)
                 for (int i = 0; i < 4; i++)
                     row[i] = sBox[row[i] - 1];
+    }
 
-        //TODO shift rows
+    private void shift(){
         for(int[][] block : state){
             for(int row = 1; row < 4; row++){
                 int[] newRow = new int[4];
@@ -82,7 +78,11 @@ public class AES {
 
             }
         }
+    }
 
+    private void round() {
+        substitute();
+        shift();
         //TODO mix columns
 
         //TODO diffuse
