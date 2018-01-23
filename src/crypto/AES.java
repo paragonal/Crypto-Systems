@@ -75,20 +75,20 @@ public class AES {
 		}
 	}
 
-	private int colHelper(int[][] arr, int[][] g, int i, int j)
-	{
+	private int colHelper(int[][] arr, int[][] g, int i, int j) {
 		int colsum = 0;
 		for (int k = 0; k < 4; k++) {
 			//Uses galois table to find specified numbers for each value in array.
 			int a = g[i][k];
 			int b = arr[k][j];
+			//XNORs the value from colCalc to find resulting number.
 			colsum ^= colCalc(a, b);
 		}
 		return colsum;
 	}
 
-	private int colCalc(int a, int b) //Helper method for mcHelper
-	{
+	private int colCalc(int a, int b) {
+    	//Calculates b based on a, using values from table.
 		if (a == 1) {
 			return b;
 		} else if (a == 2) {
