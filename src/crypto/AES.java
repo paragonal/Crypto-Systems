@@ -63,10 +63,12 @@ public class AES {
 			int[][] arr = state[n];
 			int[][] temp = new int[4][4];
 			for (int i = 0; i < 4; i++) {
+				//Copies all 4-element arrays from arr to temp.
 				System.arraycopy(arr[i], 0, temp[i], 0, 4);
 			}
 			for (int i = 0; i < 4; i++){
 				for (int j = 0; j < 4; j++){
+					//Runs colHelper on each element in array.
 					arr[i][j] = colHelper(temp, Tables.galois, i, j);
 				}
 			}
@@ -77,6 +79,7 @@ public class AES {
 	{
 		int colsum = 0;
 		for (int k = 0; k < 4; k++) {
+			//Uses galois table to find specified numbers for each value in array.
 			int a = g[i][k];
 			int b = arr[k][j];
 			colsum ^= colCalc(a, b);
@@ -95,7 +98,46 @@ public class AES {
 		}
 		return 0;
 	}
-    
+
+	public void invMixColumns() {
+    	for (int n = 0; n < state.length; n++) {
+    		int[][] arr = state[n];
+		    int[][] temp = new int[4][4];
+		    for (int i = 0; i < 4; i++) {
+			    System.arraycopy(arr[i], 0, temp[i], 0, 4);
+		    }
+		    for (int i = 0; i < 4; i++) {
+			    for (int j = 0; j < 4; j++) {
+				    arr[i][j] = invColHelper(temp, Tables.invgalois, i, j);
+			    }
+		    }
+	    }
+	}
+
+	private int invColHelper(int[][] arr, int[][] igalois, int i, int j){
+		int colsum = 0;
+		for (int k = 0; k < 4; k++) {
+			int a = igalois[i][k];
+			int b = arr[k][j];
+			colsum ^= invColCalc(a, b);
+		}
+		return colsum;
+	}
+
+	private int invColCalc(int a, int b) //Helper method for invMcHelper
+	{
+		if (a == 9) {
+			return Tables.mc9[b / 16][b % 16];
+		} else if (a == 0xb) {
+			return Tables.mc11[b / 16][b % 16];
+		} else if (a == 0xd) {
+			return Tables.mc13[b / 16][b % 16];
+		} else if (a == 0xe) {
+			return Tables.mc14[b / 16][b % 16];
+		}
+		return 0;
+	}
+	
     public String digest() {
         for (int i = 0; i < 10; i++) {
             round();
