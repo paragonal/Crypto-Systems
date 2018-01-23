@@ -40,14 +40,15 @@ public class AES {
             0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D};
     private int[][][] state;
 
-    private int[] key;
+    private int[][] key;
+    private int[][] subkey;
 
     public static void main(String args[]) {
-        AES sys = new AES(new int[]{1, 2, 3, 2, 123, 1, 1, 23}, "Hello there this is a poem, maybe it isn't who really knows?");
+        AES sys = new AES(new int[][]{{1, 2, 3, 2}, {123, 1, 1, 23}, {123, 1, 1, 23}, {123, 1, 1, 23}}, "Hello there this is a poem, maybe it isn't who really knows?");
         System.out.println(sys.digest());
     }
 
-    public AES(int[] key, String message) {
+    public AES(int[][] key, String message) {
         this.key = key;
         int blocks = message.length() / 16 + 1;
         state = new int[blocks][4][4];
@@ -59,7 +60,12 @@ public class AES {
                     index++;
                 }
     }
-    private void substitute(){
+
+    public void keySchedule() {
+
+    }
+
+    private void substitute() {
         //substitution
         for (int[][] block : state)
             for (int[] row : block)
@@ -67,11 +73,11 @@ public class AES {
                     row[i] = sBox[row[i] - 1];
     }
 
-    private void shift(){
-        for(int[][] block : state){
-            for(int row = 1; row < 4; row++){
+    private void shift() {
+        for (int[][] block : state) {
+            for (int row = 1; row < 4; row++) {
                 int[] newRow = new int[4];
-                for(int i = 0; i < 4; i ++){
+                for (int i = 0; i < 4; i++) {
                     newRow[i] = block[row][(row + i) % 4];
                 }
                 block[row] = newRow;
@@ -93,6 +99,7 @@ public class AES {
     }
 
     public String digest() {
+
         for (int i = 0; i < 10; i++) {
             round();
         }
