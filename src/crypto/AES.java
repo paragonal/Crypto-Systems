@@ -10,19 +10,31 @@ public class AES {
 
     private int round = 0;
 
+    private int rounds = 11;
+
+    public static final int DECRYPT_MODE = 0;
+
+    public static final int ENCRYPT_MODE = 1;
+
+    private int mode;
+
     public static void main(String args[]) {
-        AES sys = new AES(new int[][]{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}}, "yellow submarine");
-        System.out.println(sys.digest());
+        AES sys = new AES(new int[][]{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}}, "yellow submarine", AES.ENCRYPT_MODE);
+        String s;
+        System.out.println(s = sys.digest());
+        sys = new AES(new int[][]{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}}, s, AES.DECRYPT_MODE);
+        System.out.println(s = sys.digest());
+
     }
 
-    public AES(int[][] key, String message) {
+    public AES(int[][] key, String message, int mode) {
         int blocks = message.length() / 16 + 1;
         state = new int[blocks][4][4];
         int index = 0;
         for (int i = 0; i < blocks; i++)
             for (int j = 0; j < 4; j++)
                 for (int k = 0; k < 4; k++) {
-                    state[i][j][k] = (index < message.length()) ? (int) message.charAt(index) : 0;
+                    state[i][j][k] = (index < message.length()) ? (int) message.charAt(index) : 1;
                     index++;
                 }
         for (int k = 0; k < state.length; k++) {
@@ -43,6 +55,7 @@ public class AES {
                 subkey[i][j] = key[j][i];
         }
         keySchedule(key);
+        this.mode = mode;
     }
 
     private void keySchedule(int[][] key) {
@@ -51,18 +64,26 @@ public class AES {
 
         expandedKey[0] = key;
 
-        for (int iter = 0; iter < 11; iter++) {
-            int[] t = new int[4];
-            for (int i = 0; i < 4; i++)
-                t[i] = Tables.sBox[key[3][(i + 1) % 4]];
-            t[0] = t[0] ^ Tables.rCon[iter];
+        for (int iter = 1; iter <= rounds; iter++) {
+            int[] t = expandedKey[iter - 1][3];
+            int[][] block = new int[4][4];
 
-            for (int j = 0; j < 4; j++) {
-                for (int i = 0; i < 4; i++) {
-                    t[i] = t[i] ^ expandedKey[iter][j][i];
-                }
-                expandedKey[iter + 1][j] = t;
+            //key schedule core
+            for (int i = 0; i < 4; i++)
+                t[i] = Tables.sBox[t[(i + 1) % 4]];
+            t[0] = t[0] ^ Tables.rCon[iter];
+            for (int i = 0; i < 4; i++) {
+                t[i] = t[i] ^ expandedKey[iter - 1][0][i];
             }
+            block[0] = t.clone();
+            //end of core
+            for (int j = 1; j < 4; j++) {
+                for(int i = 0;i < 4; i ++){
+                    t[i] = t[i] ^ expandedKey[iter-1][j-1][i];
+                }
+                block[j] = t.clone();
+            }
+            expandedKey[iter] = block;
         }
     }
 
@@ -71,6 +92,14 @@ public class AES {
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 4; j++)
                     block[i][j] = block[i][j] ^ expandedKey[round][i][j];
+        }
+    }
+
+    public void invKey() {
+        for (int[][] block : state) {
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                    block[i][j] = block[i][j] ^ expandedKey[rounds - round][i][j];
         }
     }
 
@@ -124,11 +153,52 @@ public class AES {
         }
     }
 
+    private void invShift() {
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
+        for (int[][] block : state) {
+            for (int row = 1; row < 4; row++) {
+                int[] newRow = new int[4];
+                for (int i = 0; i < 4; i++) {
+                    int pos = (i - row) % 4;
+                    if (pos < 0)
+                        pos += 4;
+                    newRow[i] = block[row][pos];
+                }
+                block[row] = newRow;
+            }
+        }
+
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
+    }
+
     private void round() {
         substitute();
         shift();
-        mixColumns();
+//        mixColumns();
         addRoundKey();
+    }
+
+    private void invRound() {
+        invKey();
+        //        invColumns();
+        invSub();
+        invShift();
     }
 
     public void mixColumns() {
@@ -169,9 +239,23 @@ public class AES {
     }
 
     public String digest() {
-        for (round = 0; round < 11; round++) {
-            round();
+        for (round = 0; round <= rounds; round++) {
+            if (this.mode == AES.ENCRYPT_MODE) {
+                round();
+            } else {
+                invRound();
+            }
         }
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
+
         StringBuilder sb = new StringBuilder();
         for (int[][] block : state)
             for (int[] row : block)
