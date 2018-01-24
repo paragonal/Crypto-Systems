@@ -6,15 +6,16 @@ public class AES {
 
     private int[][][] state;
 
-    private int[][] key;
+    private int[][][] expandedKey;
+
+    private int round = 0;
 
     public static void main(String args[]) {
-        AES sys = new AES(new int[][]{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}}, "Hello there this is a poem, maybe it isn't who really knows?");
+        AES sys = new AES(new int[][]{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}}, "yellow submarine");
         System.out.println(sys.digest());
     }
 
     public AES(int[][] key, String message) {
-        this.key = key;
         int blocks = message.length() / 16 + 1;
         state = new int[blocks][4][4];
         int index = 0;
@@ -24,37 +25,52 @@ public class AES {
                     state[i][j][k] = (index < message.length()) ? (int) message.charAt(index) : 0;
                     index++;
                 }
-        keySchedule();
-    }
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
 
-    public void keySchedule() {
+        //Transpose key matrix
         int[][] subkey = new int[4][4];
         for (int i = 0; i < 4; i++) {
             int[] col = new int[4];
             for (int j = 0; j < 4; j++)
                 subkey[i][j] = key[j][i];
         }
-        System.out.println(Arrays.deepToString(key));
-        System.out.println(Arrays.deepToString(subkey));
+        keySchedule(key);
+    }
 
-        int ind = 0;
-        int[][] temp = new int[4][4];
-        for(int[] col : subkey){
-            for(int i = 0; i < 4; i++)
-                temp[ind][i] = col[(i+2)%4];
-            ind++;
+    private void keySchedule(int[][] key) {
+
+        expandedKey = new int[12][4][4];
+
+        expandedKey[0] = key;
+
+        for (int iter = 0; iter < 11; iter++) {
+            int[] t = new int[4];
+            for (int i = 0; i < 4; i++)
+                t[i] = Tables.sBox[key[3][(i + 1) % 4]];
+            t[0] = t[0] ^ Tables.rCon[iter];
+
+            for (int j = 0; j < 4; j++) {
+                for (int i = 0; i < 4; i++) {
+                    t[i] = t[i] ^ expandedKey[iter][j][i];
+                }
+                expandedKey[iter + 1][j] = t;
+            }
         }
-        subkey = temp;
-        System.out.println(Arrays.deepToString(subkey));
-
-
     }
 
     public void addRoundKey() {
         for (int[][] block : state) {
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 4; j++)
-                    block[i][j] = block[i][j] ^ key[i][j];
+                    block[i][j] = block[i][j] ^ expandedKey[round][i][j];
         }
     }
 
@@ -67,7 +83,26 @@ public class AES {
                 }
     }
 
+    private void invSub() {
+        //substitution
+        for (int[][] block : state)
+            for (int[] row : block)
+                for (int i = 0; i < 4; i++) {
+                    row[i] = Tables.invSBox[row[i]];
+                }
+    }
+
     private void shift() {
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
+
         for (int[][] block : state) {
             for (int row = 1; row < 4; row++) {
                 int[] newRow = new int[4];
@@ -75,8 +110,17 @@ public class AES {
                     newRow[i] = block[row][(row + i) % 4];
                 }
                 block[row] = newRow;
-
             }
+        }
+
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
         }
     }
 
@@ -84,11 +128,7 @@ public class AES {
         substitute();
         shift();
         mixColumns();
-
-
-        //TODO some weird block chain key shit
-
-
+        addRoundKey();
     }
 
     public void mixColumns() {
@@ -129,8 +169,7 @@ public class AES {
     }
 
     public String digest() {
-
-        for (int i = 0; i < 10; i++) {
+        for (round = 0; round < 11; round++) {
             round();
         }
         StringBuilder sb = new StringBuilder();
