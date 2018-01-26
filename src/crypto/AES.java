@@ -1,7 +1,11 @@
 package crypto;
 
-import java.util.Arrays;
-
+/**
+ *An implementation of AES in ecb mode
+ *
+ *ADSB: Final Project
+ *@author Sam Felsenfeld, Bryan Li
+ */
 public class AES {
 
     private int[][][] state;
@@ -21,7 +25,7 @@ public class AES {
     public static void main(String args[]) {
         int[][] key = new int[][]{{5, 8, 13, 5}, {2, 7, 9, 0}, {9, 9, 2, 11}, {13, 8, 5, 13}};
 
-        AES sys = new AES(key.clone(), "yellow submarine!", AES.ENCRYPT_MODE);
+        AES sys = new AES(key.clone(), "yellow submarine", AES.ENCRYPT_MODE);
         String s;
         s = sys.digest();
         System.out.println(s);
@@ -29,12 +33,14 @@ public class AES {
         System.out.println(sys.digest());
     }
 
-
+    /**
+     *Constructor for an AES object
+     *@param key a two dimensional 4 by 4 array representing the key
+     *@param message the message to be encrypted
+     *@param mode either AES.DECRYPT_MODE for decryption or AES.ENCRYPT_MODE for encryption
+     */
     public AES(int[][] key, String message, int mode) {
-        int blocks = message.length() / 16 + 1;
-        if (message.length() % 16 == 0)
-            blocks--;
-
+        int blocks = message.length() / 16 + 1 - ((message.length() % 16 == 0) ? 1 : 0);
         state = new int[blocks][4][4];
         int index = 0;
         for (int i = 0; i < blocks; i++)
@@ -64,6 +70,13 @@ public class AES {
         this.mode = mode;
     }
 
+    /**
+     *Create the expanded key
+     *
+     *This method follows the Rjindael key schedule to make the expanded key used in the addRoundKey step.
+     *@param key the input key
+     *
+     */
     private void keySchedule(int[][] key) {
 
         expandedKey = new int[12][4][4];
@@ -92,6 +105,7 @@ public class AES {
             expandedKey[iter] = block;
         }
     }
+
 
     public void addRoundKey() {
         for (int[][] block : state) {
@@ -206,6 +220,7 @@ public class AES {
         invSub();
         invShift();
     }
+
     public void invMixColumns() {
         for (int n = 0; n < state.length; n++) {
             int[][] arr = state[n];
