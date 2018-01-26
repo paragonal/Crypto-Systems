@@ -49,20 +49,10 @@ public class AES {
                     state[i][j][k] = (index < message.length()) ? (int) message.charAt(index) : 0;//pad with nulls, might make cipher more vulnerable
                     index++;
                 }
-        for (int k = 0; k < state.length; k++) {
-            int[][] tState = new int[4][4];
-            for (int i = 0; i < 4; i++) {
-                int[] col = new int[4];
-                for (int j = 0; j < 4; j++)
-                    tState[i][j] = state[k][j][i];
-            }
-            state[k] = tState;
-        }
 
         //Transpose key matrix
         int[][] subkey = new int[4][4];
         for (int i = 0; i < 4; i++) {
-            int[] col = new int[4];
             for (int j = 0; j < 4; j++)
                 subkey[i][j] = key[j][i];
         }
@@ -106,8 +96,7 @@ public class AES {
         }
     }
 
-
-    public void addRoundKey() {
+    private void addRoundKey() {
         for (int[][] block : state) {
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 4; j++)
@@ -115,7 +104,7 @@ public class AES {
         }
     }
 
-    public void invKey() {
+    private void invKey() {
         for (int[][] block : state) {
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 4; j++)
@@ -142,15 +131,6 @@ public class AES {
     }
 
     private void shift() {
-        for (int k = 0; k < state.length; k++) {
-            int[][] tState = new int[4][4];
-            for (int i = 0; i < 4; i++) {
-                int[] col = new int[4];
-                for (int j = 0; j < 4; j++)
-                    tState[i][j] = state[k][j][i];
-            }
-            state[k] = tState;
-        }
 
         for (int[][] block : state) {
             for (int row = 1; row < 4; row++) {
@@ -162,27 +142,11 @@ public class AES {
             }
         }
 
-        for (int k = 0; k < state.length; k++) {
-            int[][] tState = new int[4][4];
-            for (int i = 0; i < 4; i++) {
-                int[] col = new int[4];
-                for (int j = 0; j < 4; j++)
-                    tState[i][j] = state[k][j][i];
-            }
-            state[k] = tState;
-        }
+        transpose();
     }
 
     private void invShift() {
-        for (int k = 0; k < state.length; k++) {
-            int[][] tState = new int[4][4];
-            for (int i = 0; i < 4; i++) {
-                int[] col = new int[4];
-                for (int j = 0; j < 4; j++)
-                    tState[i][j] = state[k][j][i];
-            }
-            state[k] = tState;
-        }
+        transpose();
         for (int[][] block : state) {
             for (int row = 1; row < 4; row++) {
                 int[] newRow = new int[4];
@@ -196,15 +160,7 @@ public class AES {
             }
         }
 
-        for (int k = 0; k < state.length; k++) {
-            int[][] tState = new int[4][4];
-            for (int i = 0; i < 4; i++) {
-                int[] col = new int[4];
-                for (int j = 0; j < 4; j++)
-                    tState[i][j] = state[k][j][i];
-            }
-            state[k] = tState;
-        }
+        transpose();
     }
 
     private void round() {
@@ -221,7 +177,7 @@ public class AES {
         invShift();
     }
 
-    public void invMixColumns() {
+    private void invMixColumns() {
         for (int n = 0; n < state.length; n++) {
             int[][] arr = state[n];
             int[][] temp = new int[4][4];
@@ -259,7 +215,7 @@ public class AES {
         }
         return 0;
     }
-    public void mixColumns() {
+    private void mixColumns() {
         for (int n = 0; n < state.length; n++) {
             int[][] arr = state[n];
             int[][] temp = new int[4][4];
@@ -304,15 +260,7 @@ public class AES {
                 invRound();
             }
         }
-        for (int k = 0; k < state.length; k++) {
-            int[][] tState = new int[4][4];
-            for (int i = 0; i < 4; i++) {
-                int[] col = new int[4];
-                for (int j = 0; j < 4; j++)
-                    tState[i][j] = state[k][j][i];
-            }
-            state[k] = tState;
-        }
+        transpose();
 
         StringBuilder sb = new StringBuilder();
         for (int[][] block : state)
@@ -321,6 +269,17 @@ public class AES {
                     sb.append((char) c);
 
         return sb.toString();
+    }
+    
+    private void transpose(){
+	    for (int k = 0; k < state.length; k++) {
+		    int[][] tState = new int[4][4];
+		    for (int i = 0; i < 4; i++) {
+			    for (int j = 0; j < 4; j++)
+				    tState[i][j] = state[k][j][i];
+		    }
+		    state[k] = tState;
+	    }
     }
 
 
