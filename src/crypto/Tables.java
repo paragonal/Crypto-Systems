@@ -2,8 +2,10 @@ package crypto;
 
 public class Tables {
 	/*
-	 * These are the look up tables used for MixColumns that were found on the Rijndael MixColumns Wikipedia Page.
-	 * Each table is used based on what a certain number is multiplied by (i.e. If some number 'a' is multiplied by 3, use the mc3 table.)
+	 * These are the look up tables used for various operations that were found on the AES Wikipedia Page.
+	 * Each mc table is used based on what a certain number is multiplied by (i.e. If some number 'a' is multiplied by 3, use the mc3 table.)
+	 * The sBox table and inverse sBox table are used for substitution
+	 * The rCon table is used in keyScheduling, realistically only the first 11 elements are ever used.
 	 */
 	public static final int[] rCon = new int[] {
 			0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,

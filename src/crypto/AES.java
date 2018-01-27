@@ -25,7 +25,7 @@ public class AES {
     public static void main(String args[]) {
         int[][] key = new int[][]{{5, 8, 13, 5}, {2, 7, 9, 0}, {9, 9, 2, 11}, {13, 8, 5, 13}};
 
-        AES sys = new AES(key.clone(), "yellow submarine", AES.ENCRYPT_MODE);
+        AES sys = new AES(key.clone(), "Hello world this is a test", AES.ENCRYPT_MODE);
         String s;
         s = sys.digest();
         System.out.println(s);
@@ -49,10 +49,20 @@ public class AES {
                     state[i][j][k] = (index < message.length()) ? (int) message.charAt(index) : 0;//pad with nulls, might make cipher more vulnerable
                     index++;
                 }
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
 
         //Transpose key matrix
         int[][] subkey = new int[4][4];
         for (int i = 0; i < 4; i++) {
+            int[] col = new int[4];
             for (int j = 0; j < 4; j++)
                 subkey[i][j] = key[j][i];
         }
@@ -96,6 +106,11 @@ public class AES {
         }
     }
 
+    /**
+     * Add round key step
+     *In this step, for each block of the current state, each byte of the round key is Xored with the corresponding bite of the block.
+     *
+     */
     private void addRoundKey() {
         for (int[][] block : state) {
             for (int i = 0; i < 4; i++)
@@ -104,6 +119,12 @@ public class AES {
         }
     }
 
+    /**
+     * Inverse add round key step
+     *In this step, for each block of the current state, each byte of the round key is Xored with the corresponding bite of the block.  This works
+     * because the inverse of Xor is Xor.
+     *
+     */
     private void invKey() {
         for (int[][] block : state) {
             for (int i = 0; i < 4; i++)
@@ -112,6 +133,9 @@ public class AES {
         }
     }
 
+    /**
+     * Substitute each byte in the state with the element at it's index in the s box.
+     */
     private void substitute() {
         //substitution
         for (int[][] block : state)
@@ -121,6 +145,9 @@ public class AES {
                 }
     }
 
+    /**
+     * Substitute each byte in the state with the element at it's index in the inverse s box.  This serves to undo normal substitution
+     */
     private void invSub() {
         //substitution
         for (int[][] block : state)
@@ -130,8 +157,22 @@ public class AES {
                 }
     }
 
+    /**
+     * Shift each row in each block by an amount equal to it's row - 1 (the second row down would be shifted 1 to the left)
+     */
     private void shift() {
+        //transpose
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
 
+        //shift
         for (int[][] block : state) {
             for (int row = 1; row < 4; row++) {
                 int[] newRow = new int[4];
@@ -142,11 +183,31 @@ public class AES {
             }
         }
 
-        transpose();
+        //transpose
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
     }
 
+    /**
+     * Inverse of the shift method, does the same thing but shifts right
+     */
     private void invShift() {
-        transpose();
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
         for (int[][] block : state) {
             for (int row = 1; row < 4; row++) {
                 int[] newRow = new int[4];
@@ -160,9 +221,20 @@ public class AES {
             }
         }
 
-        transpose();
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
     }
 
+    /**
+     * One round for encryption, this is called 11 times for a 128 bit key (which is what we use)
+     */
     private void round() {
         substitute();
         shift();
@@ -170,6 +242,10 @@ public class AES {
         addRoundKey();
     }
 
+    /**
+     * One round for decryption, this does everything in the encryption round but in reverse order, note that the order shift and substitute occur in
+     * does not matter.
+     */
     private void invRound() {
         invKey();
         invMixColumns();
@@ -177,7 +253,11 @@ public class AES {
         invShift();
     }
 
-    private void invMixColumns() {
+
+    /**
+     * Reverse the mix columns step
+     */
+    public void invMixColumns() {
         for (int n = 0; n < state.length; n++) {
             int[][] arr = state[n];
             int[][] temp = new int[4][4];
@@ -215,6 +295,10 @@ public class AES {
         }
         return 0;
     }
+
+    /**
+     * Mix columns step
+     */
     private void mixColumns() {
         for (int n = 0; n < state.length; n++) {
             int[][] arr = state[n];
@@ -252,6 +336,11 @@ public class AES {
         return 0;
     }
 
+    /**
+     * This method actually does all the processing, calling round the appropiate number of times
+     * and outputting the result.
+     * @return the result of the encryption or decryption
+     */
     public String digest() {
         for (round = 0; round <= rounds; round++) {
             if (this.mode == AES.ENCRYPT_MODE) {
@@ -260,7 +349,15 @@ public class AES {
                 invRound();
             }
         }
-        transpose();
+        for (int k = 0; k < state.length; k++) {
+            int[][] tState = new int[4][4];
+            for (int i = 0; i < 4; i++) {
+                int[] col = new int[4];
+                for (int j = 0; j < 4; j++)
+                    tState[i][j] = state[k][j][i];
+            }
+            state[k] = tState;
+        }
 
         StringBuilder sb = new StringBuilder();
         for (int[][] block : state)
@@ -269,17 +366,6 @@ public class AES {
                     sb.append((char) c);
 
         return sb.toString();
-    }
-    
-    private void transpose(){
-	    for (int k = 0; k < state.length; k++) {
-		    int[][] tState = new int[4][4];
-		    for (int i = 0; i < 4; i++) {
-			    for (int j = 0; j < 4; j++)
-				    tState[i][j] = state[k][j][i];
-		    }
-		    state[k] = tState;
-	    }
     }
 
 
